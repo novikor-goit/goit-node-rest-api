@@ -13,4 +13,6 @@ contactsRouter.post("/", actions.createContact);
 
 contactsRouter.put("/:id", actions.updateContact);
 
+contactsRouter.patch("/:id/favorite", actions.updateStatusContact);
+
 export default contactsRouter;

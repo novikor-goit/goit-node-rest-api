@@ -1,57 +1,46 @@
-import fs from "fs/promises";
-import path from "path";
-import crypto from "crypto";
-
-const contactsPath = path.resolve("db", "contacts.json");
-
-async function persist(contacts) {
-    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-}
+import Contact from "../models/Contact.js";
 
 async function listContacts() {
-    const data = await fs.readFile(contactsPath, "utf-8");
-    return JSON.parse(data);
+  return Contact.findAll();
 }
 
 async function getContactById(contactId) {
-    const contacts = await listContacts();
-    return contacts.find((contact) => contact.id === contactId) ?? null;
+  return Contact.findByPk(contactId);
 }
 
 async function removeContact(contactId) {
-    const contacts = await listContacts();
-    const index = contacts.findIndex((item) => item.id === contactId);
-    if (index === -1) {
-        return null;
-    }
-    const [result] = contacts.splice(index, 1);
-    await persist(contacts);
-    return result;
+  const contact = await Contact.findByPk(contactId);
+  if (contact) {
+    await contact.destroy();
+  }
+  return contact;
 }
 
-async function addContact(name, email, phone) {
-    const contacts = await listContacts();
-    const newContact = {id: crypto.randomUUID(), name, email, phone};
-    contacts.push(newContact);
-    await persist(contacts);
-    return newContact;
+async function addContact(name, email, phone, favorite) {
+  return Contact.create({ name, email, phone, favorite });
 }
 
 async function updateContact(contactId, body) {
-    const contacts = await listContacts();
-    const index = contacts.findIndex((item) => item.id === contactId);
-    if (index === -1) {
-        return null;
-    }
-    contacts[index] = {...contacts[index], ...body};
-    await persist(contacts);
-    return contacts[index];
+  const contact = await Contact.findByPk(contactId);
+  if (contact) {
+    await contact.update(body);
+  }
+  return contact;
+}
+
+async function updateStatusContact(contactId, body) {
+  const contact = await Contact.findByPk(contactId);
+  if (contact) {
+    await contact.update(body);
+  }
+  return contact;
 }
 
 export default {
-    listContacts,
-    getContactById,
-    removeContact,
-    addContact,
-    updateContact,
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+  updateStatusContact,
 };
