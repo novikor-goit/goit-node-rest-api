@@ -1,0 +1,39 @@
+import { DataTypes } from "sequelize";
+import sequelize from "../db/db.js";
+import bcrypt from "bcryptjs";
+
+const User = sequelize.define("user", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  email: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true,
+  },
+  subscription: {
+    type: DataTypes.ENUM,
+    values: ["starter", "pro", "business"],
+    defaultValue: "starter",
+  },
+  token: {
+    type: DataTypes.STRING,
+    defaultValue: null,
+  },
+});
+
+User.prototype.setPassword = async function (password) {
+  this.password = await bcrypt.hash(password, 10);
+};
+
+User.prototype.validPassword = async function (password) {
+  return await bcrypt.compare(password, this.password);
+};
+
+export default User;

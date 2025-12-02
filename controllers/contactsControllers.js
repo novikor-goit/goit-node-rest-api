@@ -18,13 +18,15 @@ const errorHandlingWrapper = (ctrl) => {
 };
 
 async function getAllContacts(req, res) {
-  const result = await contactsService.listContacts();
+  const ownerId = req.user.id;
+  const result = await contactsService.listContacts(ownerId);
   res.json(result);
 }
 
 async function getOneContact(req, res) {
   const { id } = req.params;
-  const result = await contactsService.getContactById(id);
+  const ownerId = req.user.id;
+  const result = await contactsService.getContactById(id, ownerId);
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -33,7 +35,8 @@ async function getOneContact(req, res) {
 
 async function deleteContact(req, res) {
   const { id } = req.params;
-  const result = await contactsService.removeContact(id);
+  const ownerId = req.user.id;
+  const result = await contactsService.removeContact(id, ownerId);
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -42,15 +45,23 @@ async function deleteContact(req, res) {
 
 async function createContact(req, res) {
   const { name, email, phone, favorite } = req.body;
+  const ownerId = req.user.id;
 
-  const result = await contactsService.addContact(name, email, phone, favorite);
+  const result = await contactsService.addContact(
+    name,
+    email,
+    phone,
+    favorite,
+    ownerId
+  );
 
   res.status(201).json(result);
 }
 
 async function updateContact(req, res) {
   const { id } = req.params;
-  const result = await contactsService.updateContact(id, req.body);
+  const ownerId = req.user.id;
+  const result = await contactsService.updateContact(id, req.body, ownerId);
   if (!result) {
     throw HttpError(404, "Not found");
   }
@@ -59,7 +70,12 @@ async function updateContact(req, res) {
 
 async function updateStatusContact(req, res) {
   const { id } = req.params;
-  const result = await contactsService.updateStatusContact(id, req.body);
+  const ownerId = req.user.id;
+  const result = await contactsService.updateStatusContact(
+    id,
+    req.body,
+    ownerId
+  );
   if (!result) {
     throw HttpError(404, "Not found");
   }
