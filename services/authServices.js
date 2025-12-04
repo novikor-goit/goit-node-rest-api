@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
+import gravatar from "gravatar";
 
 const { JWT_SECRET } = process.env;
 
@@ -9,7 +10,8 @@ async function findUserByEmail(email) {
 }
 
 async function register(email, password) {
-  const newUser = new User({ email });
+  const avatarURL = gravatar.url(email);
+  const newUser = new User({ email, avatarURL });
   await newUser.setPassword(password);
   await newUser.save();
   return newUser;
@@ -34,9 +36,19 @@ async function logout(userId) {
   }
 }
 
+async function updateAvatar(userId, avatarURL) {
+  const user = await User.findByPk(userId);
+  if (user) {
+    user.avatarURL = avatarURL;
+    await user.save();
+  }
+  return user;
+}
+
 export default {
   findUserByEmail,
   register,
   login,
   logout,
+  updateAvatar,
 };

@@ -1,5 +1,7 @@
 import authServices from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
+import path from "path";
+import fs from "fs/promises";
 
 async function register(req, res, next) {
   const { email, password } = req.body;
@@ -15,6 +17,7 @@ async function register(req, res, next) {
       user: {
         email: newUser.email,
         subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
       },
     });
   } catch (error) {
@@ -66,9 +69,27 @@ async function getCurrent(req, res, next) {
   });
 }
 
+async function updateAvatar(req, res, next) {
+  try {
+    const { id } = req.user;
+    const { path: tempUpload, originalname } = req.file;
+    const avatarsDir = path.resolve("public", "avatars");
+    const extension = path.extname(originalname);
+    const filename = `${id}${extension}`;
+    const resultUpload = path.join(avatarsDir, filename);
+    await fs.rename(tempUpload, resultUpload);
+    const avatarURL = path.join("avatars", filename);
+    await authServices.updateAvatar(id, avatarURL);
+    res.json({ avatarURL });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export default {
   register,
   login,
   logout,
   getCurrent,
+  updateAvatar,
 };
