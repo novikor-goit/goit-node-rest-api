@@ -2,6 +2,7 @@ import authServices from "../services/authServices.js";
 import HttpError from "../helpers/HttpError.js";
 import path from "path";
 import fs from "fs/promises";
+import sendEmail from "../helpers/sendEmail.js";
 
 async function register(req, res, next) {
   const { email, password } = req.body;
@@ -12,6 +13,7 @@ async function register(req, res, next) {
     }
 
     const newUser = await authServices.register(email, password);
+    await authServices.sendVerificationEmail(req, newUser);
 
     res.status(201).json({
       user: {
@@ -38,6 +40,10 @@ async function login(req, res, next) {
       throw HttpError(401, "Email or password is wrong");
     }
 
+    if (!user.verify) {
+      throw HttpError(401, "Email not verified");
+    }
+
     const token = await authServices.login(user);
 
     res.json({
@@ -62,10 +68,11 @@ async function logout(req, res, next) {
 }
 
 async function getCurrent(req, res, next) {
-  const { email, subscription } = req.user;
+  const { email, subscription, avatarURL } = req.user;
   res.json({
     email,
     subscription,
+    avatarURL,
   });
 }
 
@@ -86,10 +93,51 @@ async function updateAvatar(req, res, next) {
   }
 }
 
+async function verifyEmail(req, res, next) {
+  const { verificationToken } = req.params;
+  try {
+    const user =
+      await authServices.findUserByVerificationToken(verificationToken);
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+    await authServices.verifyUser(user.id);
+    res.json({
+      message: "Verification successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function resendVerificationEmail(req, res, next) {
+  const { email } = req.body;
+  try {
+    const user = await authServices.findUserByEmail(email);
+    if (!user) {
+      throw HttpError(404, "User not found");
+    }
+
+    if (user.verify) {
+      throw HttpError(400, "Verification has already been passed");
+    }
+
+    await authServices.sendVerificationEmail(req, user);
+
+    res.json({
+      message: "Verification email sent",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export default {
   register,
   login,
   logout,
   getCurrent,
   updateAvatar,
+  verifyEmail,
+  resendVerificationEmail,
 };
